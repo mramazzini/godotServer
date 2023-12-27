@@ -13,6 +13,6 @@ app.use(routes);
 
 db.once("open", () => {
   app.listen(PORT, () => {
-    console.log("Server running on localhost");
+    console.log("Server running on localhost on port " + PORT + "!");
   });
 });
