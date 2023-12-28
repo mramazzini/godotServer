@@ -1,4 +1,6 @@
-const { Lobby } = require("../models");
+const { Lobby, LobbyQueue } = require("../models");
+
+const PORT = 10000;
 
 module.exports = {
   getLobbies: async (req, res) => {
@@ -14,7 +16,7 @@ module.exports = {
     try {
       // find lobby by lobbyName
       const lobby = await Lobby.findOne({ name: req.body.name });
-      console.log(lobby);
+
       if (lobby) {
         res.json(lobby);
       } else {
@@ -28,7 +30,20 @@ module.exports = {
   createLobby: async (req, res) => {
     try {
       // create lobby
-      const lobby = await Lobby.create(req.body);
+      const newLobby = {
+        name: req.body.name,
+        password: req.body.password,
+        owner: req.body.owner,
+        port: PORT,
+      };
+
+      const lobby = await Lobby.create(newLobby);
+      //Add to queue
+
+      const queueItem = await LobbyQueue.create({ lobbyId: lobby._id });
+
+      //Tell Aws to start a server instance at port PORT
+
       res.json(lobby);
     } catch (err) {
       console.log(err);
@@ -40,6 +55,37 @@ module.exports = {
       // remove lobby by lobbyName
       const lobby = await Lobby.findOneAndRemove({ name: req.body.name });
       res.json(lobby);
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+  },
+  clearLobbies: async (req, res) => {
+    try {
+      // remove all lobbies
+      const lobbies = await Lobby.deleteMany({});
+      res.json(lobbies);
+    } catch (err) {
+      console.log(err);
+      res.sendStatus(500);
+    }
+  },
+
+  popFromQueue: async (req, res) => {
+    try {
+      // remove oldest lobby from queue
+      const queueItem = await LobbyQueue.findOneAndRemove(
+        {},
+        { sort: { createdAt: 1 } }
+      );
+      if (queueItem) {
+        // Retrieve lobby information using the lobbyId from the queueItem
+        const lobby = await Lobby.findById(queueItem.lobbyId);
+
+        // Now you have the lobby information for server allocation
+        console.log(lobby);
+        res.json(lobby);
+      }
     } catch (err) {
       console.log(err);
       res.sendStatus(500);

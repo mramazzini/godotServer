@@ -18,8 +18,8 @@ const lobbySchema = new Schema(
       required: true,
       trim: true,
     },
-    ownerIP: {
-      type: String,
+    port: {
+      type: Number,
       required: true,
       trim: true,
     },
@@ -49,6 +49,34 @@ lobbySchema.pre("save", async function (next) {
     if (!checkExisting) {
       // Found a unique name, use it
       lobby.name = newLobbyName;
+      break;
+    }
+
+    // Increment the suffix and try again
+    suffix++;
+  }
+
+  next();
+});
+
+lobbySchema.pre("save", async function (next) {
+  const lobby = this;
+  const existingLobby = await Lobby.findOne({ port: lobby.port });
+
+  if (!existingLobby) {
+    // If the lobby with this port doesn't exist, no need to modify the port
+    return next();
+  }
+
+  // If the lobby with this port already exists, append a number to make it unique
+  let suffix = 1;
+  while (true) {
+    const newLobbyPort = lobby.port + suffix;
+    const checkExisting = await Lobby.findOne({ port: newLobbyPort });
+
+    if (!checkExisting) {
+      // Found a unique port, use it
+      lobby.port = newLobbyPort;
       break;
     }
 

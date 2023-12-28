@@ -1,3 +1,3 @@
 const Lobby = require("./Lobby");
-
-module.exports = { Lobby };
+const LobbyQueue = require("./LobbyQueue");
+module.exports = { Lobby, LobbyQueue };
