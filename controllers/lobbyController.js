@@ -1,6 +1,9 @@
 const { Lobby, LobbyQueue } = require("../models");
+const { exec } = require("child_process");
 
 const PORT = 10000;
+
+const path = "godot/rpcServer.x86_64";
 
 module.exports = {
   getLobbies: async (req, res) => {
@@ -42,8 +45,16 @@ module.exports = {
 
       const queueItem = await LobbyQueue.create({ lobbyId: lobby._id });
 
-      //Tell Aws to start a server instance at port PORT
+      //Open exe (Application will request port once opened)
+      exec(`${path}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing the shell script: ${error}`);
+          return;
+        }
 
+        console.log(`Shell script output: ${stdout}`);
+        console.error(`Shell script errors: ${stderr}`);
+      });
       res.json(lobby);
     } catch (err) {
       console.log(err);
