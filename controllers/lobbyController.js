@@ -1,9 +1,8 @@
 const { Lobby, LobbyQueue } = require("../models");
-const { exec } = require("child_process");
-
+const { spawn } = require("child_process");
 const PORT = 10000;
 
-const path = "godot/rpcServer.x86_64";
+const path = "godot/rpcServer.sh";
 
 module.exports = {
   getLobbies: async (req, res) => {
@@ -46,15 +45,12 @@ module.exports = {
       const queueItem = await LobbyQueue.create({ lobbyId: lobby._id });
 
       //Open exe (Application will request port once opened)
-      exec(`${path}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error executing the shell script: ${error}`);
-          return;
-        }
-
-        console.log(`Shell script output: ${stdout}`);
-        console.error(`Shell script errors: ${stderr}`);
+      const childProcess = spawn("sh", [path], {
+        detached: true,
+        stdio: "ignore",
       });
+
+      childProcess.unref();
       res.json(lobby);
     } catch (err) {
       console.log(err);
@@ -96,6 +92,8 @@ module.exports = {
         // Now you have the lobby information for server allocation
         console.log(lobby);
         res.json(lobby);
+      } else {
+        res.sendStatus(404);
       }
     } catch (err) {
       console.log(err);
